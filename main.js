@@ -19,6 +19,8 @@ app.use(async (ctx, next) => {
     let log = `
     [${ctx.method} ${ctx._matchedRouteName}]
     `
+
+    console.log(`${ctx.method} called`)
     await next()
 })
 
@@ -73,4 +75,6 @@ app.use(selfRouter.routes())
 app.use(eventRouter.routes())
 
 app.listen(3000)
+
+// mirror
 

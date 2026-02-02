@@ -1,0 +1,5 @@
+.env
+node_modules/
+deploy.sh
+conn.sh
+EC2Key.pem
