@@ -3,7 +3,7 @@ import {bodyParser} from "@koa/bodyparser";
 import {userRouter} from "./routes/user.js";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
-import {selfRouter} from "./routes/self.js";
+import {selfResRouter, selfRouter} from "./routes/self.js";
 import {eventRouter} from "./routes/event.js";
 import jwt from "jsonwebtoken";
 
@@ -12,7 +12,7 @@ console.log("DB conn str", process.env.MONGO_URI);
 await mongoose.connect(process.env.MONGO_URI)
 
 const app = new Koa()
-app.use(bodyParser())
+// app.use(bodyParser())
 
 // logger
 app.use(async (ctx, next) => {
@@ -27,15 +27,20 @@ app.use(async (ctx, next) => {
 // errors
 app.use(async (ctx, next) => {
     try {
+        ctx.state.response = {}
+
+        console.log("app wrapper - proceeding...")
         await next()
 
+        console.log("app wrapper - returned with no error...")
         ctx.status = ctx.state.response.status || 200
         ctx.message = ctx.state.response.message || undefined
         ctx.body = ctx.state.response.body
 
-        console.log(`no error`, ctx.status)
+        console.log(`app wrapper - no error, exiting app...`, ctx.status)
     } catch (err) {
-        console.log("an error occurred", ctx.status)
+        console.log("app wrapper - an error occurred", ctx.status)
+        console.log(err)
 
         ctx.status = err.statusCode || 500;
         ctx.message = err.message;
@@ -45,26 +50,44 @@ app.use(async (ctx, next) => {
 
 // authorisation
 app.use(async (ctx, next) => {
-    // const headers = ctx.request.headers
-    // let authHeader = headers.authorization
-    //
-    // if (!authHeader) {
-    //     ctx.throw(400, "Need access token.")
-    // }
-    //
-    // let isValid = authHeader.startsWith("Bearer ")
-    // if (!isValid) {
-    //     ctx.throw(400, "Need token.")
-    // }
-    //
-    // let token = authHeader.split(" ")[1]
-    //
-    // let payload = jwt.verify(token, process.env.JWT_SECRET)
-    //
-    // let userId = payload.userId
-    //
-    // ctx.state.userId = userId
-    ctx.state.userId = "2c9f3111-21f7-4c29-8267-634329818105"
+    const headers = ctx.request.headers
+    let authHeader = headers.authorization
+
+    console.log("authHeader", authHeader)
+
+    if (!authHeader) {
+        ctx.throw(400, "Need access token.")
+    }
+
+    let isValid = authHeader.startsWith("Bearer ")
+    if (!isValid) {
+        ctx.throw(400, "Invalid token.")
+    }
+
+    let token = authHeader.split(" ")[1]
+
+    console.log(token)
+    let payload = {}
+
+    try {
+        payload = jwt.verify(token, process.env.JWT_SECRET)
+    }
+    catch (e) { {
+        ctx.throw(401, "Invalid or expired token.")
+    }}
+
+    console.log(payload)
+
+    let userId = payload.userId
+
+    if (!userId) {
+        ctx.throw(401, "Invalid or expired token.")
+    }
+
+    console.log("---- user", userId)
+
+    ctx.state.userId = userId
+    // ctx.state.userId = "2c9f3111-21f7-4c29-8267-634329818105"
 
     await next()
 })
@@ -72,9 +95,8 @@ app.use(async (ctx, next) => {
 
 app.use(userRouter.routes())//.use(userRouter.allowedMethods())
 app.use(selfRouter.routes())
+app.use(selfResRouter.routes())
 app.use(eventRouter.routes())
 
 app.listen(3000)
-
-// mirror
 

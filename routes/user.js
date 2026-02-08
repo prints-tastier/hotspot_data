@@ -9,43 +9,26 @@ export {
 }
 
 const userRouter = new Router({
-    prefix: "/user",
+    prefix: "/users",
 });
 
-userRouter.use(async (ctx, next) => {
-    try {
-        await next()
-    } catch (err) {
-        console.log("an error occurred", ctx.status)
-    }
-})
+userRouter.get("/:id", async (ctx) => {
+    const queryParams = ctx.request.params
 
-userRouter.get("/", async (ctx) => {
+    let userId = queryParams.id
 
-    const queryParams = ctx.request.query
-
-    let username = queryParams.username
-
-    if (!username) {
-        ctx.status = 400;
-
-        throw new Error()
+    if (!userId) {
+        ctx.throw(404, "User not found.")
     }
 
-    console.log(`[GET] user username=${username}`)
+    console.log(`[GET] user userId=${userId}`)
 
     try {
-        let user = await User.findOne({username}, UserPublic);
+        let user = await User.findOne({id: userId}, UserPublic);
 
-        ctx.body = user;
-        ctx.status = 200;
+        ctx.state.response.status = 200;
+        ctx.state.response.body = user;
     } catch (err) {
-        ctx.status = 404;
-
-        throw new Error()
+        ctx.throw(404, "User not found.")
     }
-})
-
-userRouter.post("/", async ctx => {
-    // TODO method: PUT
 })

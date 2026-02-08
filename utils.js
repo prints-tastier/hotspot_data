@@ -29,5 +29,3 @@ function getBearerToken(authorization) {
 
     console.log(authorization.split(" ")[1])
 }
-
-getBearerToken("Bearer abc")

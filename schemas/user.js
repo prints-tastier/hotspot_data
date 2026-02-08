@@ -2,7 +2,7 @@ import mongoose from 'mongoose'
 import {validateEmail, validateName, validatePassword, validateUsername} from "../validation.js";
 
 export {
-    User, UserPublic, UserPrivate,
+    User, UserPublic, UserPrivate
 }
 
 const userSchema = mongoose.Schema({
