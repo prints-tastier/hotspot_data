@@ -2,6 +2,7 @@ import Router from "@koa/router";
 import {Event, EventHostUserProjection, EventProjection} from "../schemas/event.js";
 import {User} from "../schemas/user.js";
 import {validateEmail} from "../validation.js";
+import {hrefSelf} from "../utils.js";
 
 export {
     eventRouter
@@ -90,7 +91,7 @@ eventRouter.get("/", async ctx => {
     ctx.state.response.body = {
         offset: offset,
         limit: limit,
-        total: count,
+        total: events.length,
         items: events,
 
         prev: null,
@@ -102,15 +103,16 @@ eventRouter.get("/", async ctx => {
 
     let queryParams = ctx.request.query
 
-    if (offset <= limit) {
+    if (offset >= limit) {
         queryParams.offset -= limit
+        ctx.state.response.body.prev = hrefSelf("/events", queryParams)
     }
 
     if (currentIndex < lastIndex) {
         queryParams.offset += limit
+        ctx.state.response.body.next = hrefSelf("/events", queryParams)
     }
 
-    ctx.state.response.body.next = hrefSelf("/events", queryParams)
 
     console.log(events)
 })

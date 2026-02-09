@@ -45,19 +45,27 @@ function validatePassword(password) {
 }
 
 function validatePostcode(postcode) {
-    let format1 = /^[A-Z][A-Z]\d \d[A-Z][A-Z]$/       // AA9 9AA
-    let format2 = /^[A-Z][A-Z]\d\d \d[A-Z][A-Z]$/     // AA99 9AA
-    let format3 = /^[A-Z]\d \d[A-Z][A-Z]$/       // A9 9AA
-    let format4 = /^[A-Z]\d\d \d[A-Z][A-Z]$/       // A99 9AA
-    let format5 = /^[A-Z]\d[A-Z] \d[A-Z][A-Z]$/       // A9A 9AA
-    let format6 = /^[A-Z][A-Z]\d[A-Z] \d[A-Z][A-Z]$/       // AA9A 9AA
+    let format1 = "^[A-Z][A-Z]\d"       // AA9 9AA
+    let format2 = "^[A-Z][A-Z]\d\d"     // AA99 9AA
+    let format3 = "^[A-Z]\d"     // A9 9AA
+    let format4 = "^[A-Z]\d\d"       // A99 9AA
+    let format5 = "^[A-Z]\d[A-Z]"       // A9A 9AA
+    let format6 = "^[A-Z][A-Z]\d[A-Z]"       // AA9A 9AA
 
-    let isMatch = format1.test(postcode) ||
-        format2.test(postcode) ||
-        format3.test(postcode) ||
-        format4.test(postcode) ||
-        format5.test(postcode) ||
-        format6.test(postcode)
+    let end = "\d[A-Z][A-Z]$"
 
-    return isMatch
+    let formats = [format1, format2, format3, format4, format5, format6]
+
+    for (let format of formats) {
+        let regex = new RegExp(format + end)
+
+        let isMatch = regex.test(postcode);
+
+        if (isMatch) {
+            return true
+        }
+    }
+
+    return false
 }
+
