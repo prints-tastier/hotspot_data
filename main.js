@@ -75,6 +75,8 @@ app.use(async (ctx, next) => {
         payload = jwt.verify(token, process.env.JWT_SECRET)
     }
     catch (e) { {
+        console.log("ERROR VERIFYING")
+        console.log(e)
         ctx.throw(401, "Invalid or expired token.")
     }}
 
