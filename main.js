@@ -32,7 +32,7 @@ app.use(async (ctx, next) => {
         console.log("app wrapper - proceeding...")
         await next()
 
-        console.log("app wrapper - returned with no error...")
+        console.log("app wrapper - returned with no error", ctx.state.response)
         ctx.status = ctx.state.response.status || 200
         ctx.message = ctx.state.response.message || undefined
         ctx.body = ctx.state.response.body
@@ -57,8 +57,6 @@ app.use(async (ctx, next) => {
     const headers = ctx.request.headers
     let authHeader = headers.authorization
 
-    console.log("authHeader", authHeader)
-
     if (!authHeader) {
         ctx.throw(400, "Need access token.")
     }
@@ -70,7 +68,7 @@ app.use(async (ctx, next) => {
 
     let token = authHeader.split(" ")[1]
 
-    console.log(token)
+    console.log(`${token.substring(0, 5)}...${token.substring(token.length - 5)}`)
     let payload = {}
 
     try {

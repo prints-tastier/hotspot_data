@@ -2,7 +2,9 @@ import mongoose from "mongoose";
 import {validatePostcode} from "../validation.js";
 
 export {
-    Event
+    Event,
+    EventProjection,
+    EventHostUserProjection
 }
 
 const addressSchema = mongoose.Schema({
@@ -25,7 +27,7 @@ const addressSchema = mongoose.Schema({
             validator: validatePostcode,
         }
     }
-}, {strict: true})
+}, {strict: true, _id: false})
 
 const pictureSchema = mongoose.Schema({
     description: {
@@ -35,7 +37,7 @@ const pictureSchema = mongoose.Schema({
         type: "string",
         required: true,
     }
-})
+}, {strict: true, _id: false})
 
 const eventSchema = new mongoose.Schema({
     address: {
@@ -83,3 +85,6 @@ const eventSchema = new mongoose.Schema({
 })
 
 const Event = mongoose.model("Event", eventSchema, "Events");
+
+const EventProjection = {_id: 0, address: {_id: 0}}
+const EventHostUserProjection = {_id: 0, id: 1, username: 1, name: 1, pictureUrl: 1}

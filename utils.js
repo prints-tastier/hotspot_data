@@ -25,7 +25,26 @@ function hasSpecialCharacter(str) {
 function getBearerToken(authorization) {
     let isBearerToken = authorization.startsWith("Bearer ")
 
-    if (!isBearerToken) { return null }
+    if (!isBearerToken) {
+        return null
+    }
 
     console.log(authorization.split(" ")[1])
+}
+
+function hrefSelf(endpoint, queryParams) {
+    let params = Object.keys(queryParams)
+    let queryKeyValuePairs = []
+
+    for (let param of params) {
+        let value = queryParams[param]
+
+        if (value) {
+            queryKeyValuePairs.push(`${param}=${encodeURIComponent(value)}`)
+        }
+    }
+
+    let query = `?${queryKeyValuePairs.join("&")}`
+
+    return `https://hotspot-data.onrender.com${endpoint}${query}`
 }
