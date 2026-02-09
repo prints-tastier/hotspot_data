@@ -44,6 +44,10 @@ app.use(async (ctx, next) => {
 
         ctx.status = err.statusCode || 500;
         ctx.message = err.message;
+        ctx.body = {
+            status: ctx.status,
+            message: ctx.message,
+        }
     }
 })
 
