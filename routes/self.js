@@ -71,85 +71,50 @@ selfRouter.get("/", async (ctx) => {
 })
 
 selfRouter.put("/", async ctx => {
-    const userId = ctx.state.userId
-
     const body = ctx.request.body
 
+    let userId = ctx.state.userId
+
     if (!userId) {
-        ctx.throw(500, "Token lost in transition")
+        ctx.throw(404, "User not found.")
     }
 
-    // exclude immutable fields including password
-    // use POST self/password for self password reset
-    // TODO impl POST self/password
-    const updateBody = Sanitized(User.schema, body, ["id", "dateJoined", "password"])
+    if (!body) {
+        console.log("No body, 200")
+        ctx.state.response.status = 200;
+        return
+    }
 
-    // TODO enforce PUT constraint so full document is required
+    console.log(`[PUT] user userId=${userId}`)
+
+    let update = Sanitized(User.schema, body, ["id", "dateJoined", "pictureUrl", "password"]);
 
     try {
-        console.log(`Updating user - userId=${userId}`)
-        await User.updateOne({id: userId}, updateBody)
-        console.log("User updated")
-    } catch (err) {
-        console.log("User update failed")
-        console.log(err)
-
-        let code = err.code
+        await User.updateOne({id: userId}, update);
+    } catch (e) {
+        let code = e.code
 
         if (code === 11000) {
             // duplicate
-            let field = Object.keys(err.keyPattern)[0]
+            let field = Object.keys(e.keyPattern)[0]
 
-            if (field === "username") {
-                ctx.throw(400, "An account with this username already exists.")
-            } else if (field === "email") {
-                ctx.throw(400, "An account with this email already exists.")
+            switch (field) {
+                case "username":
+                    ctx.state.response.body.error.message = "An account with this username already exists."
+                    ctx.throw(409, "An account with this username already exists.")
+                    break;
+                case "email":
+                    ctx.state.response.body.error.message = "An account with this email already exists."
+                    ctx.throw(409, "An account with this email already exists.")
+                    break;
+                default:
+                    ctx.throw(409, "An error occurred.")
             }
         }
-        ctx.throw(500)
-    }
+        else {
+            console.log(e)
+        }
 
-    ctx.state.response.status = 200;
-
-    console.log("[PUT] updateBody", updateBody)
-})
-
-selfResRouter.post("/picture", async ctx => {
-    let userId = ctx.state.userId
-    let files = ctx.request.files
-
-    if (!files) {
-        ctx.throw(400)
-    }
-
-    let images = Object.keys(files).map(key => files[key])
-
-    if (images.length !== 1) {
-        ctx.throw(400)
-    }
-
-    let image = images[0]
-
-    let source = image.filepath
-    let mimeType = image.mimetype
-    let ext = mime.extension(mimeType)
-    let name = `${crypto.randomUUID()}.${ext}`
-
-    let stream = fs_.createReadStream(source)
-
-    let putRequest = new PutObjectCommand({
-        Bucket: process.env.S3_BUCKET_NAME,
-        Key: name,
-        Body: stream,
-        ContentType: mimeType,
-    })
-
-    try {
-        await S3Client.send(putRequest)
-
-        await fs.unlink(source)
-    } catch (e) {
-        console.log(e)
-        ctx.throw(500)
+        ctx.state.response.status = 200
     }
 })
