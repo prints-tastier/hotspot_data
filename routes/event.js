@@ -20,6 +20,12 @@ eventRouter.get("/", async ctx => {
         username,
         city,
         postcode,
+        startsBefore,
+        endsBefore,
+        startsAfter,
+        endsAfter,
+        after,
+        before,
 
         limit,
         offset
@@ -64,6 +70,62 @@ eventRouter.get("/", async ctx => {
     } else if (postcode) {
         filter["address.postcode"] = postcode;
     }
+
+    if (startsBefore || startsAfter) {
+        filter.startDate = {  };
+
+        if (startsBefore) {
+            filter.startDate["$lt"] = startsBefore;
+        }
+        if (startsAfter) {
+            filter.startDate["$gt"] = startsAfter;
+        }
+    }
+
+    if (endsBefore || endsAfter) {
+        filter.endDate = {  };
+
+        if (endsBefore) {
+            filter.endDate["$lt"] = endsBefore;
+        }
+        if (endsAfter) {
+            filter.endDate["$gt"] = endsAfter;
+        }
+    }
+
+    if (before || after) {
+        filter._id = {};
+
+        if (before) {
+            try {
+                let beforeEvent = await Event.findOne({id: before}, {_id: 1});
+
+                let eventDocumentId = beforeEvent._id
+
+                filter._id["$lt"] = eventDocumentId;
+            } catch (e) {
+                console.log("$before error")
+                console.error(e);
+                ctx.throw(404, "Event not found");
+            }
+        }
+
+        if (after) {
+            try {
+                let afterEvent = await Event.findOne({id: after}, {_id: 1});
+
+                let eventDocumentId = afterEvent._id
+
+                filter._id["$gt"] = eventDocumentId;
+            } catch (e) {
+                console.log("$after error")
+                console.error(e);
+                ctx.throw(404, "Event not found");
+            }
+        }
+    }
+
+    console.log(`GET /events - filter=${JSON.stringify(filter)}`);
 
     let events
 
