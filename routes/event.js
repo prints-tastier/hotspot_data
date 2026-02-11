@@ -143,6 +143,20 @@ eventRouter.get("/", async ctx => {
         ctx.throw(404);
     }
 
+    events = events.map (event => event.toObject())
+
+    for (let event of events) {
+        let hostId = event.host
+
+        try {
+            let hostUser = await User.findOne({id: hostId}, EventHostUserProjection);
+            event.host = hostUser
+        }
+        catch (e) {
+            console.error(e);
+        }
+    }
+
     let count
 
     try {
