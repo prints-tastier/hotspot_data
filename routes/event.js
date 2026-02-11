@@ -34,7 +34,9 @@ eventRouter.get("/", async ctx => {
     console.log("events", userId, username, city, postcode)
 
     if (!offset) offset = 0;
+    else offset = parseInt(offset);
     if (!limit) limit = 10;
+    else limit = parseInt(limit);
 
     if (userId && username) {
         ctx.throw(400, "Cannot filter events by both userId and username.")
