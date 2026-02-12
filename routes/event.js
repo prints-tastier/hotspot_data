@@ -20,6 +20,8 @@ eventRouter.get("/", async ctx => {
         username,
         city,
         postcode,
+        excludeHostId,
+
         startsBefore,
         endsBefore,
         startsAfter,
@@ -65,6 +67,10 @@ eventRouter.get("/", async ctx => {
         }
 
         filter.host = user.id;
+    }
+
+    if (excludeHostId) {
+        filter.host = { $ne: excludeHostId };
     }
 
     if (city) {
