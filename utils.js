@@ -1,8 +1,18 @@
+import {validatePostcode} from "./validation.js";
+
 export {
     isLowerAlpha, isUpperAlpha, isAlpha, isNumeric, isAlphanumeric, hasSpecialCharacter,
     getBearerToken,
     hrefSelf
 }
+
+let POSTCODE_OUTWARD_FORMAT_1 = "^[A-Z][A-Z]\\d"       // AA9 9AA
+let POSTCODE_OUTWARD_FORMAT_2 = "^[A-Z][A-Z]\\d\\d"     // AA99 9AA
+let POSTCODE_OUTWARD_FORMAT_3 = "^[A-Z]\\d"     // A9 9AA
+let POSTCODE_OUTWARD_FORMAT_4 = "^[A-Z]\\d\\d"       // A99 9AA
+let POSTCODE_OUTWARD_FORMAT_5 = "^[A-Z]\\d[A-Z]"       // A9A 9AA
+let POSTCODE_OUTWARD_FORMAT_6 = "^[A-Z][A-Z]\\d[A-Z]"       // AA9A 9AA
+let POSTCODE_INWARD_FORMAT = "\\d[A-Z][A-Z]$"
 
 function isLowerAlpha(str) {
     str.some(char => char === char.toLowerCase())
@@ -78,4 +88,21 @@ function isPartialPostcode(postcode) {
     }
 
     return false
+}
+
+
+function formatPostcode(postcode) {
+    let isValid = validatePostcode(postcode)
+
+    if (isValid) {
+        let regex = new RegExp(POSTCODE_INWARD_FORMAT)
+        let outward = postcode.replace(regex, "")
+        outward = outward.trim()
+
+        let inward = postcode.match(regex)[0]
+
+        return `${outward} ${inward}`
+    }
+
+    return postcode
 }

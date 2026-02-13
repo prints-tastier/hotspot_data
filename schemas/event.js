@@ -8,11 +8,11 @@ export {
 }
 
 const addressSchema = mongoose.Schema({
-    address_line_1: {
+    addressLine1: {
         type: String,
         required: true,
     },
-    address_line_2: {
+    addressLine2: {
         type: String,
         required: false,
     },
@@ -25,6 +25,7 @@ const addressSchema = mongoose.Schema({
         required: true,
         validate: {
             validator: validatePostcode,
+            message: 'Please enter a valid postcode.',
         }
     }
 }, {strict: true, _id: false})
@@ -56,8 +57,14 @@ const eventSchema = new mongoose.Schema({
     },
 
     endDate: {
-        type: "string",
+        type: Date,
         required: false,
+        validate: {
+            message: "Please enter a valid end date.",
+            validator: function(date) {
+                return date > this.startDate
+            }
+        }
     },
 
     host: {
@@ -74,8 +81,14 @@ const eventSchema = new mongoose.Schema({
     pictures: [pictureSchema],
 
     startDate: {
-        type: "string",
+        type: Date,
         required: true,
+        validate: {
+            message: "Please enter a valid start date.",
+            validator: function(date) {
+                return date >= new Date()
+            }
+        }
     },
 
     title: {

@@ -10,6 +10,14 @@ export {
     validatePostcode,
 }
 
+let POSTCODE_OUTWARD_FORMAT_1 = "^[A-Z][A-Z]\\d"       // AA9 9AA
+let POSTCODE_OUTWARD_FORMAT_2 = "^[A-Z][A-Z]\\d\\d"     // AA99 9AA
+let POSTCODE_OUTWARD_FORMAT_3 = "^[A-Z]\\d"     // A9 9AA
+let POSTCODE_OUTWARD_FORMAT_4 = "^[A-Z]\\d\\d"       // A99 9AA
+let POSTCODE_OUTWARD_FORMAT_5 = "^[A-Z]\\d[A-Z]"       // A9A 9AA
+let POSTCODE_OUTWARD_FORMAT_6 = "^[A-Z][A-Z]\\d[A-Z]"       // AA9A 9AA
+let POSTCODE_INWARD_FORMAT = "\\d[A-Z][A-Z]$"
+
 
 // TODO write tests
 function validateUsername(username) {
@@ -45,19 +53,17 @@ function validatePassword(password) {
 }
 
 function validatePostcode(postcode) {
-    let format1 = "^[A-Z][A-Z]\d"       // AA9 9AA
-    let format2 = "^[A-Z][A-Z]\d\d"     // AA99 9AA
-    let format3 = "^[A-Z]\d"     // A9 9AA
-    let format4 = "^[A-Z]\d\d"       // A99 9AA
-    let format5 = "^[A-Z]\d[A-Z]"       // A9A 9AA
-    let format6 = "^[A-Z][A-Z]\d[A-Z]"       // AA9A 9AA
-
-    let end = "\d[A-Z][A-Z]$"
-
-    let formats = [format1, format2, format3, format4, format5, format6]
+    let formats = [
+        POSTCODE_OUTWARD_FORMAT_1,
+        POSTCODE_OUTWARD_FORMAT_2,
+        POSTCODE_OUTWARD_FORMAT_3,
+        POSTCODE_OUTWARD_FORMAT_4,
+        POSTCODE_OUTWARD_FORMAT_5,
+        POSTCODE_OUTWARD_FORMAT_6
+    ]
 
     for (let format of formats) {
-        let regex = new RegExp(format + end)
+        let regex = new RegExp(format + "(\\s)*" + POSTCODE_INWARD_FORMAT)
 
         let isMatch = regex.test(postcode);
 
@@ -69,3 +75,10 @@ function validatePostcode(postcode) {
     return false
 }
 
+function validateEventStartDate(date) {
+    let now = new Date()
+
+    return date >= now
+}
+
+function validateEventEndDate(date) {}
