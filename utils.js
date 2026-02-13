@@ -3,7 +3,9 @@ import {validatePostcode} from "./validation.js";
 export {
     isLowerAlpha, isUpperAlpha, isAlpha, isNumeric, isAlphanumeric, hasSpecialCharacter,
     getBearerToken,
-    hrefSelf
+    hrefSelf,
+    formatPostcode,
+    capitalize
 }
 
 let POSTCODE_OUTWARD_FORMAT_1 = "^[A-Z][A-Z]\\d"       // AA9 9AA
@@ -105,4 +107,8 @@ function formatPostcode(postcode) {
     }
 
     return postcode
+}
+
+function capitalize(string) {
+    return string.charAt(0).toUpperCase() + string.slice(1).toLowerCase()
 }

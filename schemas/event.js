@@ -1,5 +1,6 @@
 import mongoose from "mongoose";
 import {validatePostcode} from "../validation.js";
+import {capitalize, formatPostcode} from "../utils.js";
 
 export {
     Event,
@@ -61,7 +62,7 @@ const eventSchema = new mongoose.Schema({
         required: false,
         validate: {
             message: "Please enter a valid end date.",
-            validator: function(date) {
+            validator: function (date) {
                 return date > this.startDate
             }
         }
@@ -85,7 +86,7 @@ const eventSchema = new mongoose.Schema({
         required: true,
         validate: {
             message: "Please enter a valid start date.",
-            validator: function(date) {
+            validator: function (date) {
                 return date >= new Date()
             }
         }
@@ -95,6 +96,12 @@ const eventSchema = new mongoose.Schema({
         type: "string",
         required: true,
     }
+})
+
+eventSchema.pre("save", function () {
+    console.log("THIS-----", this)
+
+    this.address.postcode = formatPostcode(this.address.postcode)
 })
 
 const Event = mongoose.model("Event", eventSchema, "Events");
