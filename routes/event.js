@@ -208,6 +208,78 @@ eventRouter.get("/", async ctx => {
     console.log(events)
 })
 
+eventRouter.post("/", async (ctx) => {
+    let userId = ctx.state.userId;
+
+    if (!userId) {
+        ctx.throw(500, "User not found.")
+    }
+
+    let eventBody = ctx.request.body
+
+    console.log("eventBody", eventBody)
+
+    let sanitized = Sanitized(Event.schema, eventBody, ["_id"])
+
+    let newEvent = new Event(sanitized)
+
+    let validationError = newEvent.validateSync({pathsToSkip: ["_id", "id", "host"]})
+    let isValid = !validationError
+
+    let errorMessages = []
+
+    if (!isValid) {
+        let errors = validationError.errors
+        // console.log(typeof errors, JSON.stringify(errors, null, 2))
+        let fields = Object.keys(errors)
+        // console.log(typeof errors, JSON.stringify(fields, null, 2))
+
+        errors = fields.map(it => errors[it])
+        // console.log(typeof errors, JSON.stringify(errors, null, 2))
+
+
+        for (let error of errors) {
+            console.log(`ERROR name - ${error.name}`)
+            if (error.name === "ValidatorError") {
+                // schema defined messsage
+                console.log("ERROR", error)
+                errorMessages.push(error.message)
+            } else {
+                if (error.path === "startDate") {
+                    errorMessages.push("Please enter a valid start date.")
+                } else if (error.path === "endDate") {
+                    errorMessages.push("Please enter a valid end date.")
+                }
+            }
+        }
+        console.log(JSON.stringify(errorMessages, null, 2))
+
+        let errorMessage = errorMessages.join(" ")
+        ctx.throw(400, errorMessage)
+    }
+
+    let createdEvent
+
+    try {
+        let id = crypto.randomUUID()
+
+        newEvent.id = id
+        newEvent.host = userId
+
+        createdEvent = await newEvent.save()
+    } catch (e) {
+        console.log(e)
+        ctx.throw(500)
+    }
+
+    createdEvent = createdEvent.toObject()
+    createdEvent = Sanitized(Event.schema, createdEvent)
+    console.log("created", JSON.stringify(createdEvent, null, 2))
+
+    ctx.state.response.status = 201;
+    ctx.state.response.body = createdEvent
+})
+
 // event
 eventRouter.get("/:id", async ctx => {
     console.log("events/:id endpoint");
@@ -327,71 +399,20 @@ eventRouter.post("/:id/images", async ctx => {
     try {
         await Event.updateOne({id: eventId}, {pictures})
     } catch (e) {
+        console.error(e)
         ctx.throw(500)
     }
-})
 
-eventRouter.post("/", async (ctx) => {
-    let userId = ctx.state.userId;
-
-    if (!userId) {
-        ctx.throw(500, "User not found.")
-    }
-
-    let eventBody = ctx.request.body
-
-    console.log("eventBody", eventBody)
-
-    let sanitized = Sanitized(Event.schema, eventBody, ["_id"])
-
-    let newEvent = new Event(sanitized)
-
-    let validationError = newEvent.validateSync({pathsToSkip: ["_id", "id", "host"]})
-    let isValid = !validationError
-
-    let errorMessages = []
-
-    if (!isValid) {
-        let errors = validationError.errors
-        // console.log(typeof errors, JSON.stringify(errors, null, 2))
-        let fields = Object.keys(errors)
-        // console.log(typeof errors, JSON.stringify(fields, null, 2))
-
-        errors = fields.map(it => errors[it])
-        // console.log(typeof errors, JSON.stringify(errors, null, 2))
-
-
-        for (let error of errors) {
-            console.log(`ERROR name - ${error.name}`)
-            if (error.name === "ValidatorError") {
-                // schema defined messsage
-                console.log("ERROR", error)
-                errorMessages.push(error.message)
-            } else {
-                if (error.path === "startDate") {
-                    errorMessages.push("Please enter a valid start date.")
-                } else if (error.path === "endDate") {
-                    errorMessages.push("Please enter a valid end date.")
-                }
-            }
-        }
-        console.log(JSON.stringify(errorMessages, null, 2))
-
-        let errorMessage = errorMessages.join(" ")
-        ctx.throw(400, errorMessage)
-    }
+    let updatedEvent
 
     try {
-        let id = crypto.randomUUID()
-
-        newEvent.id = id
-        newEvent.host = userId
-
-        await newEvent.save()
-    } catch (e) {
-        console.log(e)
+        updatedEvent = await Event.findOne({id: eventId})
+    }
+    catch (e) {
+        console.error(e)
         ctx.throw(500)
     }
 
     ctx.state.response.status = 201;
+    ctx.state.response.body = updatedEvent
 })
