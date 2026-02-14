@@ -392,8 +392,9 @@ eventRouter.post("/:id/images", async ctx => {
     let pictures = event.pictures
 
     let baseUrl = process.env.CDN_BASE_URL
+    let imagesEndpoint = process.env.CDN_IMAGES_ENDPOINT
 
-    let url = `${baseUrl}/${imageId}`
+    let url = `${baseUrl}${imagesEndpoint}/${imageId}`
     pictures.push({url, description: null})
 
     try {
