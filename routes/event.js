@@ -1,11 +1,14 @@
 import Router from "@koa/router";
 import {Event, EventHostUserProjection, EventProjection} from "../schemas/event.js";
 import {User} from "../schemas/user.js";
-import {validateEmail} from "../validation.js";
 import {hrefSelf} from "../utils.js";
 import {bodyParser} from "@koa/bodyparser";
-import * as events from "node:events";
 import {Sanitized} from "../schema_utils.js";
+import {PutObjectCommand} from "@aws-sdk/client-s3";
+import {getSignedUrl} from "@aws-sdk/s3-request-presigner"
+import ms from "ms"
+import {S3Client} from "../s3.js";
+import mime from "mime";
 
 export {
     eventRouter
@@ -75,7 +78,7 @@ eventRouter.get("/", async ctx => {
     }
 
     if (excludeHostId) {
-        filter.host = { $ne: excludeHostId };
+        filter.host = {$ne: excludeHostId};
     }
 
     if (city) {
@@ -85,7 +88,7 @@ eventRouter.get("/", async ctx => {
     }
 
     if (startsBefore || startsAfter) {
-        filter.startDate = {  };
+        filter.startDate = {};
 
         if (startsBefore) {
             filter.startDate["$lt"] = startsBefore;
@@ -96,7 +99,7 @@ eventRouter.get("/", async ctx => {
     }
 
     if (endsBefore || endsAfter) {
-        filter.endDate = {  };
+        filter.endDate = {};
 
         if (endsBefore) {
             filter.endDate["$lt"] = endsBefore;
@@ -154,7 +157,7 @@ eventRouter.get("/", async ctx => {
         ctx.throw(404);
     }
 
-    events = events.map (event => event.toObject())
+    events = events.map(event => event.toObject())
 
     for (let event of events) {
         let hostId = event.host
@@ -162,8 +165,7 @@ eventRouter.get("/", async ctx => {
         try {
             let hostUser = await User.findOne({id: hostId}, EventHostUserProjection);
             event.host = hostUser
-        }
-        catch (e) {
+        } catch (e) {
             console.error(e);
         }
     }
@@ -259,6 +261,76 @@ eventRouter.get("/:id", async ctx => {
 
 })
 
+eventRouter.post("/:id/images", async ctx => {
+    const eventId = ctx.params.id
+
+    const userId = ctx.state.userId
+
+    let event
+
+    try {
+        event = await Event.findOne({id: eventId}, {_id: 0, id: 1, host: 1, pictures: 1})
+    } catch (e) {
+        console.log(e)
+        ctx.throw(500)
+    }
+
+    if (!event) {
+        ctx.throw(404, "Event not found.")
+    }
+
+    if (event.host !== userId) {
+        console.log(`host: ${event.host} user: ${userId}`)
+        ctx.throw(403, "Cannot edit this event.")
+    }
+
+    console.log(event)
+
+    // checkpoint: event exists and user can edit
+
+    const contentType = ctx.request.type
+    const contentLength = ctx.request.headers["content-length"]
+
+    if (!contentType.startsWith("image/")) {
+        ctx.throw(400, "Upload content must be an image.")
+    }
+
+    let extension = mime.getExtension(contentType)
+    let imageId = crypto.randomUUID()
+    imageId = `${imageId}.${extension}`
+
+
+    let putCommand = new PutObjectCommand({
+        Bucket: process.env.S3_BUCKET_NAME,
+        Key: imageId,
+        ContentType: contentType,
+        ContentLength: contentLength,
+        Body: ctx.req,
+    })
+
+    try {
+        await S3Client.send(putCommand)
+    } catch (e) {
+        console.error(e)
+        ctx.throw(500)
+    }
+
+    // image uploaded
+    event = event.toObject()
+    let pictures = event.pictures
+
+    let baseUrl = process.env.CDN_BASE_URL
+
+    let url = `${baseUrl}/${imageId}`
+    pictures.push({url, description: null})
+
+    try {
+        await Event.updateOne({id: eventId}, {pictures})
+    } catch (e) {
+        ctx.throw(500)
+    }
+})
+
 eventRouter.post("/", async (ctx) => {
     let userId = ctx.state.userId;
 
@@ -295,12 +367,10 @@ eventRouter.post("/", async (ctx) => {
                 // schema defined messsage
                 console.log("ERROR", error)
                 errorMessages.push(error.message)
-            }
-            else {
+            } else {
                 if (error.path === "startDate") {
                     errorMessages.push("Please enter a valid start date.")
-                }
-                else if (error.path === "endDate") {
+                } else if (error.path === "endDate") {
                     errorMessages.push("Please enter a valid end date.")
                 }
             }
@@ -318,8 +388,7 @@ eventRouter.post("/", async (ctx) => {
         newEvent.host = userId
 
         await newEvent.save()
-    }
-    catch (e) {
+    } catch (e) {
         console.log(e)
         ctx.throw(500)
     }

@@ -24,13 +24,28 @@ app.use(async (ctx, next) => {
     await next()
 })
 
-// errors
+// app wrapper
 app.use(async (ctx, next) => {
+    let session = await mongoose.startSession()
+    ctx.state.session = session;
+
     try {
+        ctx.state.session.startTransaction()
         ctx.state.response = {}
 
         console.log("app wrapper - proceeding...")
         await next()
+
+        try {
+            console.log("commiting transaction...")
+            await session.commitTransaction()
+            console.log("transaction committed")
+        }
+        catch (e) {
+            console.log("transaction commit failed")
+            console.error(e)
+            ctx.throw(500)
+        }
 
         console.log("app wrapper - returned with no error", ctx.state.response)
         ctx.status = ctx.state.response.status || 200
@@ -39,6 +54,7 @@ app.use(async (ctx, next) => {
 
         console.log(`app wrapper - no error, exiting app...`, ctx.status)
     } catch (err) {
+        ctx.state.session.abortTransaction()
         console.log("app wrapper - an error occurred", ctx.status)
         console.log(err)
 
@@ -48,6 +64,9 @@ app.use(async (ctx, next) => {
             status: ctx.status,
             message: ctx.message,
         }
+    }
+    finally {
+        await ctx.state.session.endSession()
     }
 })
 
@@ -73,12 +92,13 @@ app.use(async (ctx, next) => {
 
     try {
         payload = jwt.verify(token, process.env.JWT_SECRET)
+    } catch (e) {
+        {
+            console.log("ERROR VERIFYING")
+            console.log(e)
+            ctx.throw(401, "Invalid or expired token.")
+        }
     }
-    catch (e) { {
-        console.log("ERROR VERIFYING")
-        console.log(e)
-        ctx.throw(401, "Invalid or expired token.")
-    }}
 
     console.log(payload)
 
