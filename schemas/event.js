@@ -32,9 +32,12 @@ const addressSchema = mongoose.Schema({
 }, {strict: true, _id: false})
 
 const pictureSchema = mongoose.Schema({
-    description: {
-        type: "string"
+    id: {
+        type: String,
+        required: true,
+        unique: true,
     },
+
     url: {
         type: "string",
         required: true,

@@ -4,7 +4,7 @@ import {User} from "../schemas/user.js";
 import {hrefSelf} from "../utils.js";
 import {bodyParser} from "@koa/bodyparser";
 import {Sanitized} from "../schema_utils.js";
-import {PutObjectCommand} from "@aws-sdk/client-s3";
+import {DeleteObjectCommand, DeleteObjectsCommand, PutObjectCommand} from "@aws-sdk/client-s3";
 import {getSignedUrl} from "@aws-sdk/s3-request-presigner"
 import ms from "ms"
 import {S3Client} from "../s3.js";
@@ -333,6 +333,7 @@ eventRouter.get("/:id", async ctx => {
 
 })
 
+// event images
 eventRouter.post("/:id/images", async ctx => {
     const eventId = ctx.params.id
 
@@ -408,12 +409,165 @@ eventRouter.post("/:id/images", async ctx => {
 
     try {
         updatedEvent = await Event.findOne({id: eventId})
-    }
-    catch (e) {
+    } catch (e) {
         console.error(e)
         ctx.throw(500)
     }
 
     ctx.state.response.status = 201;
     ctx.state.response.body = updatedEvent
+})
+
+eventRouter.delete("/:id/images", async ctx => {
+    const eventId = ctx.params.id
+
+    console.log("DELETE IMAGES")
+
+    const userId = ctx.state.userId
+
+    let event
+
+    try {
+        event = await Event.findOne({id: eventId}, {_id: 0, id: 1, host: 1, pictures: 1})
+    } catch (e) {
+        console.log(e)
+        ctx.throw(500)
+    }
+
+    if (!event) {
+        ctx.throw(404, "Event not found.")
+    }
+
+    if (event.host !== userId) {
+        console.log(`host: ${event.host} user: ${userId}`)
+        ctx.throw(403, "Cannot edit this event.")
+    }
+
+    console.log(event)
+
+    // checkpoint: event exists and user can edit
+
+    // event = event.toObject()
+
+    let imageIds = event.pictures.map(it => `${it.id}.${mime.getExtension(mime.getType(it.url))}`)
+    console.log(`IMAGE IDS: ${imageIds}`)
+
+    if (imageIds.length > 0) {
+
+
+        let deleteCommand = new DeleteObjectsCommand({
+            Bucket: process.env.S3_BUCKET_NAME,
+            Delete: {
+                Objects: imageIds.map(it => ({Key: it}))
+            }
+        })
+
+        try {
+            await S3Client.send(deleteCommand)
+        } catch (e) {
+            console.error(e)
+            ctx.throw(500)
+        }
+    }
+
+
+    try {
+        await Event.updateOne({id: eventId}, {pictures: []})
+
+    } catch (e) {
+        console.error(e)
+        ctx.throw(500)
+    }
+
+    let response
+
+    try {
+        response = await Event.findOne({id: eventId}, EventProjection)
+    }
+    catch (e) {
+        console.error(e)
+        ctx.throw(500)
+    }
+
+    ctx.state.response.status = 200;
+    ctx.state.response.body = response
+})
+
+// event image
+
+eventRouter.delete("/:eventId/images/:imageId", async ctx => {
+    const eventId = ctx.params.eventId
+    const imageId = ctx.params.imageId
+
+    console.log("DELETE IMAGES")
+
+    const userId = ctx.state.userId
+
+    let event
+
+    try {
+        event = await Event.findOne({id: eventId}, {_id: 0, id: 1, host: 1, pictures: 1})
+    } catch (e) {
+        console.log(e)
+        ctx.throw(500)
+    }
+
+    if (!event) {
+        ctx.throw(404, "Event not found.")
+    }
+
+    if (event.host !== userId) {
+        console.log(`host: ${event.host} user: ${userId}`)
+        ctx.throw(403, "Cannot edit this event.")
+    }
+
+    console.log(event)
+
+    // checkpoint: event exists and user can edit
+
+    // event = event.toObject()
+
+    let imageIds = event.pictures.map(it => it.id)
+    console.log(`IMAGE IDS: ${imageIds}`)
+
+    if (imageIds.length > 0 && imageIds.includes(imageId)) {
+        let url = event.pictures.find(it => it.id === imageId).url
+        let ext = mime.getExtension(mime.getType(url))
+        let key = `${imageId}.${ext}`
+
+        let deleteCommand = new DeleteObjectCommand({
+            Bucket: process.env.S3_BUCKET_NAME,
+            Key: key
+        })
+
+        try {
+            await S3Client.send(deleteCommand)
+        } catch (e) {
+            console.error(e)
+            ctx.throw(500)
+        }
+    }
+
+    let newPictures = event.pictures.filter(it => it.id !== imageId)
+
+    try {
+        await Event.updateOne({id: eventId}, {pictures: newPictures })
+
+    } catch (e) {
+        console.error(e)
+        ctx.throw(500)
+    }
+
+    let response
+
+    try {
+        response = await Event.findOne({id: eventId}, EventProjection)
+    }
+    catch (e) {
+        console.error(e)
+        ctx.throw(500)
+    }
+
+    ctx.state.response.status = 200;
+    ctx.state.response.body = response
 })
