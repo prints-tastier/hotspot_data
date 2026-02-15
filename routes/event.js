@@ -334,6 +334,42 @@ eventRouter.get("/:id", async ctx => {
 
 })
 
+eventRouter.delete("/:id", async ctx => {
+    let eventId = ctx.request.params.id
+
+    console.log("event", eventId)
+    let userId = ctx.state.userId
+
+    let event
+    try {
+        event = await Event.findOne({id: eventId}, EventProjection)
+    } catch (e) {
+        console.log(e)
+        ctx.throw(500)
+    }
+
+    if (!event) {
+        ctx.state.response.status = 204
+        return
+    }
+    console.log("event host userId", event, event.host, userId)
+
+    if (event.host !== userId) {
+        ctx.throw(403, "Cannot edit event.")
+    }
+
+    try {
+        await Event.deleteOne({id: eventId})
+    }
+    catch (e) {
+        console.log(e)
+        ctx.throw(500)
+    }
+
+    ctx.state.response.status = 200
+    ctx.state.response.body = event
+})
+
 // event images
 eventRouter.post("/:id/images", async ctx => {
     const eventId = ctx.params.id
@@ -484,8 +520,7 @@ eventRouter.delete("/:id/images", async ctx => {
 
     try {
         response = await Event.findOne({id: eventId}, EventProjection)
-    }
-    catch (e) {
+    } catch (e) {
         console.error(e)
         ctx.throw(500)
     }
@@ -552,7 +587,7 @@ eventRouter.delete("/:eventId/images/:imageId", async ctx => {
     let newPictures = event.pictures.filter(it => it.id !== imageId)
 
     try {
-        await Event.updateOne({id: eventId}, {pictures: newPictures })
+        await Event.updateOne({id: eventId}, {pictures: newPictures})
 
     } catch (e) {
         console.error(e)
@@ -563,8 +598,7 @@ eventRouter.delete("/:eventId/images/:imageId", async ctx => {
 
     try {
         response = await Event.findOne({id: eventId}, EventProjection)
-    }
-    catch (e) {
+    } catch (e) {
         console.error(e)
         ctx.throw(500)
     }
