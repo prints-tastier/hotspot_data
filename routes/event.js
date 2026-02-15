@@ -277,6 +277,18 @@ eventRouter.post("/", async (ctx) => {
     createdEvent = Sanitized(Event.schema, createdEvent)
     console.log("created", JSON.stringify(createdEvent, null, 2))
 
+    let host
+
+    try {
+        host = await User.findOne({id: userId}, EventHostUserProjection)
+    }
+    catch (e) {
+        console.error(e);
+        ctx.throw(500)
+    }
+
+    createdEvent.host = host
+
     ctx.state.response.status = 201;
     ctx.state.response.body = createdEvent
 })
@@ -366,6 +378,18 @@ eventRouter.delete("/:id", async ctx => {
         ctx.throw(500)
     }
 
+    let host
+
+    try {
+        host = await User.findOne({id: event.host}, EventHostUserProjection)
+    }
+    catch (e) {
+        console.log(e)
+        ctx.throw(500)
+    }
+
+    event.host = host
+
     ctx.state.response.status = 200
     ctx.state.response.body = event
 })
@@ -446,6 +470,9 @@ eventRouter.post("/:id/images", async ctx => {
 
     try {
         updatedEvent = await Event.findOne({id: eventId})
+        let host = await User.findOne({id: userId}, EventHostUserProjection)
+
+        updatedEvent.host = host
     } catch (e) {
         console.error(e)
         ctx.throw(500)
@@ -520,6 +547,9 @@ eventRouter.delete("/:id/images", async ctx => {
 
     try {
         response = await Event.findOne({id: eventId}, EventProjection)
+        let host = await User.findOne({id: userId}, EventProjection)
+
+        response.host = host
     } catch (e) {
         console.error(e)
         ctx.throw(500)
