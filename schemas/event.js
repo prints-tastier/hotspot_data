@@ -82,7 +82,11 @@ const eventSchema = new mongoose.Schema({
         unique: true,
     },
 
-    pictures: [pictureSchema],
+    pictures: {
+        type: [pictureSchema],
+        required: true,
+        default: [],
+    },
 
     startDate: {
         type: Date,

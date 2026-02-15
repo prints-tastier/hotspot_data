@@ -223,7 +223,7 @@ eventRouter.post("/", async (ctx) => {
 
     let newEvent = new Event(sanitized)
 
-    let validationError = newEvent.validateSync({pathsToSkip: ["_id", "id", "host"]})
+    let validationError = newEvent.validateSync({pathsToSkip: ["_id", "id", "host", "pictures"]})
     let isValid = !validationError
 
     let errorMessages = []
@@ -265,6 +265,7 @@ eventRouter.post("/", async (ctx) => {
 
         newEvent.id = id
         newEvent.host = userId
+        newEvent.pictures = []
 
         createdEvent = await newEvent.save()
     } catch (e) {
