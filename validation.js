@@ -67,9 +67,13 @@ function validatePostcode(postcode) {
 
         let isMatch = regex.test(postcode);
 
+        console.debug(`Checking postcode postcode against - ${format} regex=${regex}`);
+
         if (isMatch) {
+            console.debug(`---- is match`);
             return true
         }
+        console.debug(`---- no match`);
     }
 
     return false
