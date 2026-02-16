@@ -18,3 +18,5 @@ function Sanitized(schema, body, exclude = []) {
 
     return sanitized
 }
+
+function ValidatePartialModel(schema, body, exclude = []) {}

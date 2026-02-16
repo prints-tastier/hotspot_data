@@ -9,6 +9,7 @@ import {getSignedUrl} from "@aws-sdk/s3-request-presigner"
 import ms from "ms"
 import {S3Client} from "../s3.js";
 import mime from "mime";
+import {set} from "mongoose";
 
 export {
     eventRouter
@@ -223,7 +224,7 @@ eventRouter.post("/", async (ctx) => {
 
     let newEvent = new Event(sanitized)
 
-    let validationError = newEvent.validateSync({pathsToSkip: ["_id", "id", "host", "pictures"]})
+    let validationError = newEvent.validateSync({pathsToSkip: ["_id", "id", "host", "pictures", "_createdAt"]})
     let isValid = !validationError
 
     let errorMessages = []
@@ -258,6 +259,8 @@ eventRouter.post("/", async (ctx) => {
         ctx.throw(400, errorMessage)
     }
 
+    // checkpoint: new event is valid
+
     let createdEvent
 
     try {
@@ -266,6 +269,7 @@ eventRouter.post("/", async (ctx) => {
         newEvent.id = id
         newEvent.host = userId
         newEvent.pictures = []
+        eventBody._createdAt = new Date()
 
         createdEvent = await newEvent.save()
     } catch (e) {
@@ -281,8 +285,7 @@ eventRouter.post("/", async (ctx) => {
 
     try {
         host = await User.findOne({id: userId}, EventHostUserProjection)
-    }
-    catch (e) {
+    } catch (e) {
         console.error(e);
         ctx.throw(500)
     }
@@ -346,6 +349,93 @@ eventRouter.get("/:id", async ctx => {
 
 })
 
+eventRouter.put("/:id", async (ctx) => {
+    let eventId = ctx.request.params.id
+
+    let userId = ctx.state.userId;
+
+    if (!userId) {
+        ctx.throw(500, "User not found.")
+    }
+
+    let eventUpdate = ctx.request.body
+
+    console.log("eventBody", eventUpdate)
+
+    eventUpdate = Sanitized(Event.schema, eventUpdate, ["_id", "host", "pictures", "_createdAt"])
+
+    console.log("eventUpdate keysToValidate", Object.keys(eventUpdate))
+
+    let validationError = new Event(eventUpdate).validateSync(Object.keys(eventUpdate))
+    let isValid = !validationError
+
+    let allowedFields = ["startDate", "endDate", "address.postcode"]
+    let errorMessages = []
+
+    if (!isValid) {
+        let errors = validationError.errors
+        // console.log(typeof errors, JSON.stringify(errors, null, 2))
+        let fields = Object.keys(errors)
+        // console.log(typeof errors, JSON.stringify(fields, null, 2))
+
+        errors = fields.map(it => errors[it])
+        // console.log(typeof errors, JSON.stringify(errors, null, 2))
+
+
+        for (let error of errors) {
+            console.log(`ERROR name - ${error.name}`)
+            if (error.name === "ValidatorError") {
+                // schema defined messsage
+                console.log("ERROR", error)
+                if (allowedFields.includes(error.fullPath)) {
+                    errorMessages.push(error.message)
+                }
+                else {
+                    errorMessages.push("Invalid request. Please try again.")
+                }
+            } else {
+                if (error.path === "startDate") {
+                    errorMessages.push("Please enter a valid start date.")
+                } else if (error.path === "endDate") {
+                    errorMessages.push("Please enter a valid end date.")
+                }
+            }
+        }
+        console.log(JSON.stringify(errorMessages, null, 2))
+        errorMessages = [...new Set(errorMessages)]
+        let errorMessage = errorMessages.join(" ")
+        ctx.throw(400, errorMessage)
+    }
+
+    // checkpoint: new event is valid
+
+    let event
+
+    try {
+        await Event.updateOne({id: eventId}, eventUpdate)
+        event = await Event.findOne({id: eventId}, EventProjection)
+    } catch (e) {
+        console.log(e)
+        ctx.throw(500)
+    }
+
+    event = event.toObject()
+
+    let host
+
+    try {
+        host = await User.findOne({id: userId}, EventHostUserProjection)
+    } catch (e) {
+        console.error(e);
+        ctx.throw(500)
+    }
+
+    event.host = host
+
+    ctx.state.response.status = 201;
+    ctx.state.response.body = event
+})
+
 eventRouter.delete("/:id", async ctx => {
     let eventId = ctx.request.params.id
 
@@ -372,8 +462,7 @@ eventRouter.delete("/:id", async ctx => {
 
     try {
         await Event.deleteOne({id: eventId})
-    }
-    catch (e) {
+    } catch (e) {
         console.log(e)
         ctx.throw(500)
     }
@@ -382,8 +471,7 @@ eventRouter.delete("/:id", async ctx => {
 
     try {
         host = await User.findOne({id: event.host}, EventHostUserProjection)
-    }
-    catch (e) {
+    } catch (e) {
         console.log(e)
         ctx.throw(500)
     }

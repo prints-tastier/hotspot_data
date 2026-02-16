@@ -102,6 +102,18 @@ const eventSchema = new mongoose.Schema({
     title: {
         type: "string",
         required: true,
+    },
+
+    status: {
+        type: String,
+        required: true,
+        enum: ["partial", "live"],
+    },
+
+    _createdAt: {
+        type: Date,
+        required: true,
+        default: new Date()
     }
 })
 
