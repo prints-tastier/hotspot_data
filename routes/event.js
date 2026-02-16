@@ -335,7 +335,19 @@ eventRouter.put("/:id", async (ctx) => {
         ctx.throw(500, "User not found.")
     }
 
-    let eventUpdate = ctx.request.body
+    let updateBody = ctx.request.body
+
+    let eventUpdateFields = Object.keys(updateBody)
+
+    let eventUpdate = {}
+
+    for (let field of eventUpdateFields) {
+        let value = updateBody[field]
+
+        if (value !== undefined && value !== null) {
+            eventUpdate[field] = value
+        }
+    }
 
     console.log("eventBody", eventUpdate)
 
@@ -343,15 +355,15 @@ eventRouter.put("/:id", async (ctx) => {
 
     console.log("eventUpdate keysToValidate", Object.keys(eventUpdate))
 
-    let validationError = new Event(eventUpdate).validateSync(Object.keys(eventUpdate))
-    let isValid = !validationError
-
-    if (!isValid) {
-        let {errors, errorMessage} = getRequestValidationErrors(validationError)
-
-        ctx.state.response.body = {errors}
-        ctx.throw(400, errorMessage)
-    }
+    // let validationError = new Event(eventUpdate).validateSync(Object.keys(eventUpdate))
+    // let isValid = !validationError
+    //
+    // if (!isValid) {
+    //     let {errors, errorMessage} = getRequestValidationErrors(validationError)
+    //
+    //     ctx.state.response.body = {errors}
+    //     ctx.throw(400, errorMessage)
+    // }
 
     // checkpoint: new event is valid
 
