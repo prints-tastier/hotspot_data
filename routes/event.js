@@ -5,7 +5,7 @@ import {hrefSelf} from "../utils.js";
 import {bodyParser} from "@koa/bodyparser";
 import {Sanitized} from "../schema_utils.js";
 import {DeleteObjectCommand, DeleteObjectsCommand, PutObjectCommand} from "@aws-sdk/client-s3";
-import {getSignedUrl} from "@aws-sdk/s3-request-presigner"
+import {Upload} from "@aws-sdk/lib-storage"
 import ms from "ms"
 import {S3Client} from "../s3.js";
 import mime from "mime";
@@ -480,18 +480,36 @@ eventRouter.post("/:id/images", async ctx => {
     imageId = `${imageId}.${extension}`
 
 
-    let putCommand = new PutObjectCommand({
-        Bucket: process.env.S3_BUCKET_NAME,
-        Key: imageId,
-        ContentType: contentType,
-        ContentLength: contentLength,
-        Body: ctx.req,
+    // let putCommand = new PutObjectCommand({
+    //     Bucket: process.env.S3_BUCKET_NAME,
+    //     Key: imageId,
+    //     ContentType: contentType,
+    //     ContentLength: contentLength,
+    //     Body: ctx.req,
+    // })
+    //
+    // try {
+    //     await S3Client.send(putCommand)
+    // } catch (e) {
+    //     console.error(e)
+    //     ctx.throw(500)
+    // }
+
+    let upload = new Upload({
+        client: S3Client,
+        params: {
+            Bucket: process.env.S3_BUCKET_NAME,
+            Key: imageId,
+            ContentType: contentType,
+            Body: ctx.req,
+        }
     })
 
     try {
-        await S3Client.send(putCommand)
-    } catch (e) {
-        console.error(e)
+        await upload.done()
+    }
+    catch (e) {
+        console.log(e)
         ctx.throw(500)
     }
 
