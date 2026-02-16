@@ -40,8 +40,7 @@ app.use(async (ctx, next) => {
             console.log("commiting transaction...")
             await session.commitTransaction()
             console.log("transaction committed")
-        }
-        catch (e) {
+        } catch (e) {
             console.log("transaction commit failed")
             console.error(e)
             ctx.throw(500)
@@ -59,13 +58,13 @@ app.use(async (ctx, next) => {
         console.log(err)
 
         ctx.status = err.statusCode || 500;
-        ctx.message = err.message;
+        ctx.message = err.message
         ctx.body = {
+            ...ctx.state.response.body,
             status: ctx.status,
-            message: ctx.message,
+            message: err.message
         }
-    }
-    finally {
+    } finally {
         await ctx.state.session.endSession()
     }
 })

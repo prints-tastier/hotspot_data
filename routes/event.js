@@ -227,35 +227,12 @@ eventRouter.post("/", async (ctx) => {
     let validationError = newEvent.validateSync({pathsToSkip: ["_id", "id", "host", "pictures", "_createdAt"]})
     let isValid = !validationError
 
-    let errorMessages = []
-
     if (!isValid) {
-        let errors = validationError.errors
-        // console.log(typeof errors, JSON.stringify(errors, null, 2))
-        let fields = Object.keys(errors)
-        // console.log(typeof errors, JSON.stringify(fields, null, 2))
+        let {errors, errorMessage} = getRequestValidationErrors(validationError)
 
-        errors = fields.map(it => errors[it])
-        // console.log(typeof errors, JSON.stringify(errors, null, 2))
+        console.log("IS VALID ERRORS", errors, errorMessage)
 
-
-        for (let error of errors) {
-            console.log(`ERROR name - ${error.name}`)
-            if (error.name === "ValidatorError") {
-                // schema defined messsage
-                console.log("ERROR", error)
-                errorMessages.push(error.message)
-            } else {
-                if (error.path === "startDate") {
-                    errorMessages.push("Please enter a valid start date.")
-                } else if (error.path === "endDate") {
-                    errorMessages.push("Please enter a valid end date.")
-                }
-            }
-        }
-        console.log(JSON.stringify(errorMessages, null, 2))
-
-        let errorMessage = errorMessages.join(" ")
+        ctx.state.response.body = {errors};
         ctx.throw(400, errorMessage)
     }
 
@@ -369,41 +346,10 @@ eventRouter.put("/:id", async (ctx) => {
     let validationError = new Event(eventUpdate).validateSync(Object.keys(eventUpdate))
     let isValid = !validationError
 
-    let allowedFields = ["startDate", "endDate", "address.postcode"]
-    let errorMessages = []
-
     if (!isValid) {
-        let errors = validationError.errors
-        // console.log(typeof errors, JSON.stringify(errors, null, 2))
-        let fields = Object.keys(errors)
-        // console.log(typeof errors, JSON.stringify(fields, null, 2))
+        let {errors, errorMessage} = getRequestValidationErrors(validationError)
 
-        errors = fields.map(it => errors[it])
-        // console.log(typeof errors, JSON.stringify(errors, null, 2))
-
-
-        for (let error of errors) {
-            console.log(`ERROR name - ${error.name}`)
-            if (error.name === "ValidatorError") {
-                // schema defined messsage
-                console.log("ERROR", error)
-                if (allowedFields.includes(error.fullPath)) {
-                    errorMessages.push(error.message)
-                }
-                else {
-                    errorMessages.push("Invalid request. Please try again.")
-                }
-            } else {
-                if (error.path === "startDate") {
-                    errorMessages.push("Please enter a valid start date.")
-                } else if (error.path === "endDate") {
-                    errorMessages.push("Please enter a valid end date.")
-                }
-            }
-        }
-        console.log(JSON.stringify(errorMessages, null, 2))
-        errorMessages = [...new Set(errorMessages)]
-        let errorMessage = errorMessages.join(" ")
+        ctx.state.response.body = {errors}
         ctx.throw(400, errorMessage)
     }
 
@@ -724,3 +670,34 @@ eventRouter.delete("/:eventId/images/:imageId", async ctx => {
     ctx.state.response.status = 200;
     ctx.state.response.body = response
 })
+
+function getRequestValidationErrors(validationError) {
+    let errorMessages = []
+    let errorObjects = []
+
+    let errors = validationError.errors
+    let fields = Object.keys(errors)
+
+    errors = fields.map(it => errors[it])
+
+    for (let error of errors) {
+        if (error.name === "ValidatorError") {
+            console.log("ERROR", error)
+            let code = error.kind === "required" ? "missing_request_field" : "invalid_request_field_value"
+
+            let errorObject = {
+                code,
+                field: error.path,
+                message: error.message
+            }
+
+            errorMessages.push(error.message)
+            errorObjects.push(errorObject)
+        }
+    }
+    console.log(JSON.stringify(errorMessages, null, 2))
+    errorMessages = [...new Set(errorMessages)]
+    let errorMessage = errorMessages.join(" ")
+
+    return {errors: errorObjects, errorMessage}
+}

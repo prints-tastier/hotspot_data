@@ -11,7 +11,7 @@ export {
 const addressSchema = mongoose.Schema({
     addressLine1: {
         type: String,
-        required: true,
+        required: [true, "Address line 1 is required."],
     },
     addressLine2: {
         type: String,
@@ -19,11 +19,11 @@ const addressSchema = mongoose.Schema({
     },
     city: {
         type: String,
-        required: true,
+        required: [true, "City is required."],
     },
     postcode: {
         type: String,
-        required: true,
+        required: [true, "Postcode is required."],
         validate: {
             validator: validatePostcode,
             message: 'Please enter a valid postcode.',
@@ -47,12 +47,12 @@ const pictureSchema = mongoose.Schema({
 const eventSchema = new mongoose.Schema({
     address: {
         type: addressSchema,
-        required: true,
+        required: [true, "Address is required."],
     },
 
     details: {
         type: "string",
-        required: true,
+        required: [true, "Details are required."],
     },
 
     directions: {
@@ -64,7 +64,7 @@ const eventSchema = new mongoose.Schema({
         type: Date,
         required: false,
         validate: {
-            message: "Please enter a valid end date.",
+            message: "End date must be after start date.",
             validator: function (date) {
                 return date > this.startDate
             }
@@ -92,7 +92,7 @@ const eventSchema = new mongoose.Schema({
         type: Date,
         required: true,
         validate: {
-            message: "Please enter a valid start date.",
+            message: "Start date must be in the future.",
             validator: function (date) {
                 return date >= new Date()
             }
@@ -101,13 +101,21 @@ const eventSchema = new mongoose.Schema({
 
     title: {
         type: "string",
-        required: true,
+        required: [true, "Title is required."],
     },
 
     status: {
         type: String,
-        required: true,
-        enum: ["partial", "live"],
+        required: [true, "Invalid request."],
+        enum: {
+            values: ["draft", "live"],
+            message: "Invalid request.",
+        }
+    },
+
+    _isPartial: {
+        type: Boolean,
+        required: [true, "Invalid request."],
     },
 
     _createdAt: {
