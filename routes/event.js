@@ -353,18 +353,25 @@ eventRouter.put("/:id", async (ctx) => {
     console.log("eventBody", eventUpdate)
 
     eventUpdate = Sanitized(Event.schema, eventUpdate, ["_id", "host", "pictures", "_createdAt"])
+    let pathsToValidate = Object.keys(eventUpdate)
+
+    console.log("sanitized update body", eventUpdate)
 
     console.log("eventUpdate keysToValidate", Object.keys(eventUpdate))
 
-    // let validationError = new Event(eventUpdate).validateSync(Object.keys(eventUpdate))
-    // let isValid = !validationError
-    //
-    // if (!isValid) {
-    //     let {errors, errorMessage} = getRequestValidationErrors(validationError)
-    //
-    //     ctx.state.response.body = {errors}
-    //     ctx.throw(400, errorMessage)
-    // }
+    eventUpdate = new Event(eventUpdate, null, {defaults: false})
+
+    console.log("eventUpdate Model body", eventUpdate)
+
+    let validationError = eventUpdate.validateSync(pathsToValidate)
+    let isValid = !validationError
+
+    if (!isValid) {
+        let {errors, errorMessage} = getRequestValidationErrors(validationError)
+
+        ctx.state.response.body = {errors}
+        ctx.throw(400, errorMessage)
+    }
 
     // checkpoint: new event is valid
 
@@ -478,7 +485,7 @@ eventRouter.post("/:id/images", async ctx => {
 
     let extension = mime.getExtension(contentType)
     let imageId = crypto.randomUUID()
-    imageId = `${imageId}.${extension}`
+    let imageKey = `${imageId}.${extension}`
 
 
     // let putCommand = new PutObjectCommand({
@@ -500,7 +507,7 @@ eventRouter.post("/:id/images", async ctx => {
         client: S3Client,
         params: {
             Bucket: process.env.S3_BUCKET_NAME,
-            Key: imageId,
+            Key: imageKey,
             ContentType: contentType,
             Body: ctx.req,
         }
@@ -508,8 +515,7 @@ eventRouter.post("/:id/images", async ctx => {
 
     try {
         await upload.done()
-    }
-    catch (e) {
+    } catch (e) {
         console.log(e)
         ctx.throw(500)
     }
@@ -522,7 +528,7 @@ eventRouter.post("/:id/images", async ctx => {
     let imagesEndpoint = process.env.CDN_IMAGES_ENDPOINT
 
     let url = `${baseUrl}${imagesEndpoint}/${imageId}`
-    pictures.push({url, description: null})
+    pictures.push({url, id: imageId, description: null})
 
     try {
         await Event.updateOne({id: eventId}, {pictures})
