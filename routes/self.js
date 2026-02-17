@@ -4,13 +4,8 @@ import {Event} from "../schemas/event.js";
 import dotenv from "dotenv";
 import koaBody from "koa-body";
 import {bodyParser} from "@koa/bodyparser";
-import {PutObjectCommand, PutObjectRequest$, S3} from "@aws-sdk/client-s3";
-import mime, {extension} from "mime-types"
-import * as fs from "fs/promises";
-import fs_ from "fs";
-import {S3Client} from "../s3.js";
-import mongoose, {Mongoose} from "mongoose";
-import {Sanitized} from "../schema_utils.js";
+import {Sanitized, ResolveSchemaValidationErrors} from "../schema_utils.js";
+import {ErrorCode} from "../codes.js";
 
 export {
     selfRouter,
@@ -85,9 +80,30 @@ selfRouter.put("/", async ctx => {
         return
     }
 
-    console.log(`[PUT] user userId=${userId}`)
+    console.log(`[PUT] user userId=${userId}`, body)
 
     let update = Sanitized(User.schema, body, ["id", "dateJoined", "pictureUrl", "password"]);
+
+    console.log(`[PUT] user Sanitized`, update)
+
+
+    let updateFields = Object.keys(update)
+    let pathsToValidate = updateFields.filter(it => update[it] !== undefined && update[it] !== null)
+
+    update = new User(update, null, {defaults: false});
+
+    let errors = []
+
+    let validationError = update.validateSync(pathsToValidate, {pathsToSkip: ["_id", "id", "dateJoined", "pictureUrl", "password"]})
+    let isValid = !validationError
+
+    if (!isValid) {
+        let validationErrors = ResolveSchemaValidationErrors(validationError).errors
+        ctx.state.response.body = {errors: validationErrors}
+        ctx.throw(400)
+    }
+
+    console.log("PUT /self -> ", update)
 
     try {
         await User.updateOne({id: userId}, update);
@@ -100,21 +116,42 @@ selfRouter.put("/", async ctx => {
 
             switch (field) {
                 case "username":
-                    ctx.state.response.body.error.message = "An account with this username already exists."
+                    errors.push({
+                        code: ErrorCode.INVALID_FIELD,
+                        field: field,
+                        message: "A user with this username already exists."
+                    })
+
+                    // ctx.state.response.body.error.message = "An account with this username already exists."
                     ctx.throw(409, "An account with this username already exists.")
                     break;
                 case "email":
-                    ctx.state.response.body.error.message = "An account with this email already exists."
+                    errors.push({
+                        code: ErrorCode.INVALID_FIELD,
+                        field: field,
+                        message: "A user with this email already exists."
+                    })
+
                     ctx.throw(409, "An account with this email already exists.")
                     break;
                 default:
                     ctx.throw(409, "An error occurred.")
             }
-        }
-        else {
+        } else {
             console.log(e)
         }
-
-        ctx.state.response.status = 200
     }
+
+    let updatedUser
+
+    try {
+        updatedUser = await User.findOne({id: userId}, UserPrivate)
+    }
+    catch (e) {
+        console.log(e)
+        ctx.throw(500)
+    }
+
+    ctx.state.response.status = 200
+    ctx.state.response.body = updatedUser
 })

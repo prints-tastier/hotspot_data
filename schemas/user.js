@@ -14,25 +14,28 @@ const userSchema = mongoose.Schema({
 
     username: {
         type: String,
-        required: true,
+        required: [true, "Username is required."],
         unique: true,
         validate: {
             validator: validateUsername,
+            message: "Username must be over three characters long start with a letter or underscore (_), and  only contain letters, numbers and underscores."
         }
     },
     email: {
         type: String,
-        required: true,
+        required: [true, "Email is required."],
         unique: true,
         validate: {
             validator: validateEmail,
+            message: "Please enter a valid email address."
         }
     },
     name: {
         type: String,
-        required: false,
+        required: [true, "Name is required."],
         validate: {
             validator: validateName,
+            message: "Name must be 30 characters or less."
         }
     },
     dateJoined: {

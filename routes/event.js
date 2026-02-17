@@ -10,6 +10,7 @@ import ms from "ms"
 import {S3Client} from "../s3.js";
 import mime from "mime";
 import {set} from "mongoose";
+import {ErrorCode} from "../codes.js";
 
 export {
     eventRouter
@@ -717,7 +718,7 @@ function getRequestValidationErrors(validationError) {
     for (let error of errors) {
         if (error.name === "ValidatorError") {
             console.log("ERROR", error)
-            let code = error.kind === "required" ? "missing_request_field" : "invalid_request_field_value"
+            let code = error.kind === "required" ? ErrorCode.MISSING_FIELD : ErrorCode.INVALID_FIELD
 
             let errorObject = {
                 code,
