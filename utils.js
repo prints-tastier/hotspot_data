@@ -57,7 +57,7 @@ function hrefSelf(endpoint, queryParams) {
     for (let param of params) {
         let value = queryParams[param]
 
-        if (value) {
+        if (value || value === 0) {
             queryKeyValuePairs.push(`${param}=${encodeURIComponent(value)}`)
         }
     }

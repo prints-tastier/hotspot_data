@@ -6,6 +6,7 @@ import dotenv from "dotenv";
 import {selfResRouter, selfRouter} from "./routes/self.js";
 import {eventRouter} from "./routes/event.js";
 import jwt from "jsonwebtoken";
+import {ticketsRouter} from "./routes/tickets.js";
 
 dotenv.config();
 console.log("DB conn str", process.env.MONGO_URI);
@@ -120,6 +121,7 @@ app.use(userRouter.routes())//.use(userRouter.allowedMethods())
 app.use(selfRouter.routes())
 app.use(selfResRouter.routes())
 app.use(eventRouter.routes())
+app.use(ticketsRouter.routes())
 
 app.listen(3000)
 

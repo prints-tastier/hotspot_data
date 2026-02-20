@@ -191,17 +191,22 @@ eventRouter.get("/", async ctx => {
         next: null
     }
 
-    let currentIndex = offset + limit
+    let indexOfNext = offset + limit
     let lastIndex = count - 1
 
     let queryParams = ctx.request.query
 
-    if (offset >= limit) {
-        queryParams.offset -= limit
+    console.log(`DEBUG - offset=[${typeof offset}]${offset} limit=[${typeof limit}]${limit} indexOfNext=[${typeof indexOfNext}]${indexOfNext} lastIndex=[${lastIndex}]`)
+
+    if (offset > 0) {
+        let prevOffset = offset - limit
+        prevOffset = Math.max(0, prevOffset)
+
+        queryParams.offset = prevOffset
         ctx.state.response.body.prev = hrefSelf("/events", queryParams)
     }
 
-    if (currentIndex < lastIndex) {
+    if (indexOfNext <= lastIndex) {
         queryParams.offset += limit
         ctx.state.response.body.next = hrefSelf("/events", queryParams)
     }
