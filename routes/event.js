@@ -3,7 +3,7 @@ import {Event, EventHostUserProjection, EventProjection} from "../schemas/event.
 import {User} from "../schemas/user.js";
 import {hrefSelf} from "../utils.js";
 import {bodyParser} from "@koa/bodyparser";
-import {Sanitized} from "../schema_utils.js";
+import {getSchemaFields, Sanitized} from "../schema_utils.js";
 import {DeleteObjectCommand, DeleteObjectsCommand, PutObjectCommand} from "@aws-sdk/client-s3";
 import {Upload} from "@aws-sdk/lib-storage"
 import ms from "ms"
@@ -38,6 +38,9 @@ eventRouter.get("/", async ctx => {
         endsAfter,
         after,
         before,
+
+        sortBy,
+        order,
 
         limit,
         offset
@@ -140,6 +143,24 @@ eventRouter.get("/", async ctx => {
                 console.error(e);
                 ctx.throw(404, "Event not found");
             }
+        }
+    }
+
+    if (sortBy) {
+        let fields = getSchemaFields(Event.schema, ["_id", "password"])
+
+        let isValidSortBy = fields.includes(sortBy)
+
+        if (isValidSortBy) {
+            filter.sortBy = sortBy;
+        }
+    }
+
+    if (order) {
+        order = parseInt(order);
+
+        if (order === 1 || order === -1) {
+
         }
     }
 

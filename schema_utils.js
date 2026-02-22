@@ -1,7 +1,7 @@
 import {ErrorCode} from "./codes.js";
 
 export {
-    Sanitized, ResolveSchemaValidationErrors
+    Sanitized, ResolveSchemaValidationErrors, getSchemaFields
 }
 
 function Sanitized(schema, body, exclude = []) {
@@ -19,6 +19,13 @@ function Sanitized(schema, body, exclude = []) {
     }
 
     return sanitized
+}
+
+function getSchemaFields(schema, exclude = []) {
+    let fields = Object.keys(schema.obj)
+    let filtered = fields.filter(it => !exclude.includes(it))
+
+    return filtered
 }
 
 function ResolveSchemaValidationErrors(validationError) {
@@ -52,4 +59,5 @@ function ResolveSchemaValidationErrors(validationError) {
     return {errors: errorObjects, errorMessage}
 }
 
-function ValidatePartialModel(schema, body, exclude = []) {}
+function ValidatePartialModel(schema, body, exclude = []) {
+}
