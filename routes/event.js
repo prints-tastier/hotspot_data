@@ -36,8 +36,6 @@ eventRouter.get("/", async ctx => {
         endsBefore,
         startsAfter,
         endsAfter,
-        after,
-        before,
 
         sortBy,
         order,
@@ -54,7 +52,7 @@ eventRouter.get("/", async ctx => {
     else limit = parseInt(limit);
 
     if (userId && username) {
-        ctx.throw(400, "Cannot filter events by both userId and username.")
+        ctx.throw(400, "Cannot filter events by both user ID and username.")
     }
 
     if (city && postcode) {
@@ -76,7 +74,8 @@ eventRouter.get("/", async ctx => {
         }
 
         if (!user) {
-            ctx.throw(404);
+            console.log("Could not find user with id " + userId);
+            ctx.throw(404, "Couldn't find events for this user.");
         }
 
         filter.host = user.id;
@@ -114,46 +113,12 @@ eventRouter.get("/", async ctx => {
         }
     }
 
-    if (before || after) {
-        filter._id = {};
-
-        if (before) {
-            try {
-                let beforeEvent = await Event.findOne({id: before}, {_id: 1});
-
-                let eventDocumentId = beforeEvent._id
-
-                filter._id["$lt"] = eventDocumentId;
-            } catch (e) {
-                console.log("$before error")
-                console.error(e);
-                ctx.throw(404, "Event not found");
-            }
-        }
-
-        if (after) {
-            try {
-                let afterEvent = await Event.findOne({id: after}, {_id: 1});
-
-                let eventDocumentId = afterEvent._id
-
-                filter._id["$gt"] = eventDocumentId;
-            } catch (e) {
-                console.log("$after error")
-                console.error(e);
-                ctx.throw(404, "Event not found");
-            }
-        }
-    }
-
     if (sortBy) {
         let fields = getSchemaFields(Event.schema, ["_id", "password"])
 
         let isValidSortBy = fields.includes(sortBy)
 
         if (!isValidSortBy) {
-            // filter.sortBy = sortBy;
-
             sortBy = null
         }
     }
@@ -183,10 +148,15 @@ eventRouter.get("/", async ctx => {
                 .limit(limit)
         }
     } catch (error) {
+        console.log(error);
         ctx.throw(500);
     }
 
     if (!events) {
+        console.log("No events found");
+        console.log(typeof events)
+        console.log(events)
+
         ctx.throw(404);
     }
 
