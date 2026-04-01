@@ -151,16 +151,18 @@ eventRouter.get("/", async ctx => {
 
         let isValidSortBy = fields.includes(sortBy)
 
-        if (isValidSortBy) {
-            filter.sortBy = sortBy;
+        if (!isValidSortBy) {
+            // filter.sortBy = sortBy;
+
+            sortBy = null
         }
     }
 
     if (order) {
         order = parseInt(order);
 
-        if (order === 1 || order === -1) {
-
+        if (order !== 1 && order !== -1) {
+            order = null
         }
     }
 
@@ -169,9 +171,17 @@ eventRouter.get("/", async ctx => {
     let events
 
     try {
-        events = await Event.find(filter, EventProjection)
-            .skip(offset)
-            .limit(limit)
+        if (sortBy != null && order != null) {
+            events = await Event.find(filter, EventProjection)
+                .sort({[sortBy]: order})
+                .skip(offset)
+                .limit(limit)
+        }
+        else {
+            events = await Event.find(filter, EventProjection)
+                .skip(offset)
+                .limit(limit)
+        }
     } catch (error) {
         ctx.throw(500);
     }
