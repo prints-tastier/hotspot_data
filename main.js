@@ -72,47 +72,47 @@ app.use(async (ctx, next) => {
 
 
 // authorisation
-// app.use(async (ctx, next) => {
-//     const headers = ctx.request.headers
-//     let authHeader = headers.authorization
-//
-//     if (!authHeader) {
-//         ctx.throw(400, "Need access token.")
-//     }
-//
-//     let isValid = authHeader.startsWith("Bearer ")
-//     if (!isValid) {
-//         ctx.throw(400, "Invalid token.")
-//     }
-//
-//     let token = authHeader.split(" ")[1]
-//
-//     console.log(`${token.substring(0, 5)}...${token.substring(token.length - 5)}`)
-//     let payload = {}
-//
-//     try {
-//         payload = jwt.verify(token, process.env.JWT_SECRET)
-//     } catch (e) {
-//         console.log("ERROR VERIFYING")
-//         console.log(e)
-//         ctx.throw(401, "Invalid or expired token.")
-//     }
-//
-//     console.log(payload)
-//
-//     let userId = payload.userId
-//
-//     if (!userId) {
-//         ctx.throw(401, "Invalid or expired token.")
-//     }
-//
-//     console.log("---- user", userId)
-//
-//     ctx.state.userId = userId
-//     // ctx.state.userId = "2c9f3111-21f7-4c29-8267-634329818105"
-//
-//     await next()
-// })
+app.use(async (ctx, next) => {
+    const headers = ctx.request.headers
+    let authHeader = headers.authorization
+
+    if (!authHeader) {
+        ctx.throw(400, "Need access token.")
+    }
+
+    let isValid = authHeader.startsWith("Bearer ")
+    if (!isValid) {
+        ctx.throw(400, "Invalid token.")
+    }
+
+    let token = authHeader.split(" ")[1]
+
+    console.log(`${token.substring(0, 5)}...${token.substring(token.length - 5)}`)
+    let payload = {}
+
+    try {
+        payload = jwt.verify(token, process.env.JWT_SECRET)
+    } catch (e) {
+        console.log("ERROR VERIFYING")
+        console.log(e)
+        ctx.throw(401, "Invalid or expired token.")
+    }
+
+    console.log(payload)
+
+    let userId = payload.userId
+
+    if (!userId) {
+        ctx.throw(401, "Invalid or expired token.")
+    }
+
+    console.log("---- user", userId)
+
+    ctx.state.userId = userId
+    // ctx.state.userId = "2c9f3111-21f7-4c29-8267-634329818105"
+
+    await next()
+})
 
 
 app.use(userRouter.routes())//.use(userRouter.allowedMethods())
