@@ -43,6 +43,10 @@ ticketsRouter.get("/", async (ctx) => {
 
     let {sortBy, order} = ctx.request.query;
 
+    if (order) {
+        order = parseInt(order);
+    }
+
     if (!limit) {
         limit = 10
     }
@@ -54,9 +58,6 @@ ticketsRouter.get("/", async (ctx) => {
     }
 
     offset = parseInt(offset)
-
-    let ticketEventId = ctx.request.query.eventId
-    let ticketUserId = ctx.request.query.userId
 
     let filter = {}
 
