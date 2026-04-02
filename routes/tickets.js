@@ -88,7 +88,7 @@ ticketsRouter.get("/", async (ctx) => {
                         let: {ticketEventId: "$eventId"},
                         pipeline: [
                             {$match: {$expr: {$eq: ["$id", "$$ticketEventId"]}}},
-                            {$project: EventProjection}
+                            {$project: EventProjection},
                         ],
                         localField: "eventId",
                         foreignField: "id",
@@ -126,6 +126,21 @@ ticketsRouter.get("/", async (ctx) => {
     } catch (e) {
         console.log(e);
         ctx.throw(500)
+    }
+
+    // tickets = tickets.map(it => it.toObject())
+
+    for (let ticket of tickets) {
+        let event = ticket.event
+
+        let hostId = event.host
+
+        try {
+            let hostUser = await User.findOne({id: hostId}, EventHostUserProjection);
+            event.host = hostUser
+        } catch (e) {
+            console.error(e);
+        }
     }
 
     let count;
