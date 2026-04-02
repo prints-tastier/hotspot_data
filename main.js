@@ -4,7 +4,7 @@ import {userRouter} from "./routes/user.js";
 import mongoose from "mongoose";
 import dotenv from "dotenv";
 import {selfResRouter, selfRouter} from "./routes/self.js";
-import {eventRouter} from "./routes/event.js";
+import {eventRouter} from "./routes/events.js";
 import jwt from "jsonwebtoken";
 import {ticketsRouter} from "./routes/tickets.js";
 

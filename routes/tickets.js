@@ -56,9 +56,7 @@ ticketsRouter.get("/", async (ctx) => {
         filter["eventId"] = ticketEventId;
     }
 
-    if (ticketUserId) {
-        filter["userId"] = ticketUserId;
-    }
+    filter["userId"] = userId;
 
     let tickets
 
@@ -66,8 +64,7 @@ ticketsRouter.get("/", async (ctx) => {
         tickets = await Ticket.find(filter, TicketProjection)
             .skip(offset)
             .limit(limit)
-    }
-    catch (e) {
+    } catch (e) {
         console.log(e);
         ctx.throw(500)
     }
@@ -75,8 +72,7 @@ ticketsRouter.get("/", async (ctx) => {
     let count;
     try {
         count = await Ticket.countDocuments(filter);
-    }
-    catch (e) {
+    } catch (e) {
         console.log(e);
         ctx.throw(500)
     }
@@ -198,8 +194,7 @@ ticketsRouter.get("/:id", async ctx => {
     try {
         // TODO add authorization: ticket holder can access, event host can access.
         ticket = await Ticket.findOne({id: ticketId}, TicketProjection)
-    }
-    catch (e) {
+    } catch (e) {
         console.log(e)
         ctx.throw(404)
     }
@@ -216,8 +211,7 @@ ticketsRouter.delete("/:id", async ctx => {
 
     try {
         ticket = await Ticket.findOne({id: ticketId}, TicketProjection)
-    }
-    catch (e) {
+    } catch (e) {
         console.log(e)
         ctx.throw(404)
     }
@@ -228,8 +222,7 @@ ticketsRouter.delete("/:id", async ctx => {
 
     try {
         await Ticket.deleteOne({id: ticketId})
-    }
-    catch (e) {
+    } catch (e) {
         console.log(e)
         ctx.throw(500)
     }
