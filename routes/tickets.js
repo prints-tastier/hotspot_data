@@ -84,6 +84,11 @@ ticketsRouter.get("/", async (ctx) => {
                 {
                     $lookup: {
                         from: "Events",
+                        let: {ticketEventId: "$eventId"},
+                        pipeline: [
+                            {$match: {$expr: {$eq: ["$id", "$$ticketEventId"]}}},
+                            {$project: EventProjection}
+                        ],
                         localField: "eventId",
                         foreignField: "id",
                         as: "event",
@@ -92,7 +97,8 @@ ticketsRouter.get("/", async (ctx) => {
                 {$unwind: "$event"},
                 {$sort: {[sortBy]: order}},
                 {$skip: offset},
-                {$limit: limit}
+                {$limit: limit},
+                {$project: TicketProjection}
             ])
         } else {
             tickets = await Ticket.aggregate([
@@ -100,6 +106,11 @@ ticketsRouter.get("/", async (ctx) => {
                 {
                     $lookup: {
                         from: "Events",
+                        let: {ticketEventId: "$eventId"},
+                        pipeline: [
+                            {$match: {$expr: {$eq: ["$id", "$$ticketEventId"]}}},
+                            {$project: EventProjection}
+                        ],
                         localField: "eventId",
                         foreignField: "id",
                         as: "event",
@@ -107,7 +118,8 @@ ticketsRouter.get("/", async (ctx) => {
                 },
                 {$unwind: "$event"},
                 {$skip: offset},
-                {$limit: limit}
+                {$limit: limit},
+                {$project: TicketProjection}
             ])
         }
     } catch (e) {
@@ -157,7 +169,7 @@ ticketsRouter.get("/", async (ctx) => {
         ctx.state.response.body.next = hrefSelf("/tickets", queryParams)
     }
 
-    console.log(tickets)
+    console.log(JSON.stringify(tickets, null, 2))
 })
 
 ticketsRouter.post("/", async (ctx) => {
