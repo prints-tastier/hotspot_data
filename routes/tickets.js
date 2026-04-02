@@ -29,8 +29,10 @@ ticketsRouter.get("/", async (ctx) => {
     let userId = ctx.state.userId;
 
     if (!userId) {
-        ctx.throw(500)
+        //ctx.throw(500)
     }
+
+    userId = "1e0f7b34-54e3-4cda-b711-c51eb2b799c8"
 
     let offset = ctx.request.query.offset
     let limit = ctx.request.query.limit
@@ -69,6 +71,8 @@ ticketsRouter.get("/", async (ctx) => {
 
     sortBy = `event.${sortBy}`
 
+    console.log("filter", filter)
+
     let tickets
 
     try {
@@ -81,7 +85,7 @@ ticketsRouter.get("/", async (ctx) => {
                 {$match: filter},
                 {
                     $lookup: {
-                        from: "events",
+                        from: "Events",
                         localField: "eventId",
                         foreignField: "id",
                         as: "event",
@@ -97,7 +101,7 @@ ticketsRouter.get("/", async (ctx) => {
                 {$match: filter},
                 {
                     $lookup: {
-                        from: "events",
+                        from: "Events",
                         localField: "eventId",
                         foreignField: "id",
                         as: "event",
