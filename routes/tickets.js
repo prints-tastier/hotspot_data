@@ -35,6 +35,14 @@ ticketsRouter.get("/", async (ctx) => {
     let offset = ctx.request.query.offset
     let limit = ctx.request.query.limit
 
+    if (!offset) offset = 0;
+    else offset = parseInt(offset);
+    if (!limit) limit = 10;
+    else limit = parseInt(limit);
+
+
+    let {sortBy, order} = ctx.request.query;
+
     if (!limit) {
         limit = 10
     }
@@ -52,18 +60,54 @@ ticketsRouter.get("/", async (ctx) => {
 
     let filter = {}
 
-    if (ticketEventId) {
-        filter["eventId"] = ticketEventId;
-    }
+    // if (ticketEventId) {
+    //     filter["eventId"] = ticketEventId;
+    // }
 
+    // user can only get own tickets
     filter["userId"] = userId;
+
+    sortBy = `event.${sortBy}`
 
     let tickets
 
     try {
-        tickets = await Ticket.find(filter, TicketProjection)
-            .skip(offset)
-            .limit(limit)
+        // tickets = await Ticket.find(filter, TicketProjection)
+        //     .skip(offset)
+        //     .limit(limit)
+
+        if (sortBy && order) {
+            tickets = await Ticket.aggregate([
+                {$match: filter},
+                {
+                    $lookup: {
+                        from: "events",
+                        localField: "eventId",
+                        foreignField: "id",
+                        as: "event",
+                    }
+                },
+                {$unwind: "$event"},
+                {$sort: {[sortBy]: order}},
+                {$skip: offset},
+                {$limit: limit}
+            ])
+        } else {
+            tickets = await Ticket.aggregate([
+                {$match: filter},
+                {
+                    $lookup: {
+                        from: "events",
+                        localField: "eventId",
+                        foreignField: "id",
+                        as: "event",
+                    }
+                },
+                {$unwind: "$event"},
+                {$skip: offset},
+                {$limit: limit}
+            ])
+        }
     } catch (e) {
         console.log(e);
         ctx.throw(500)
