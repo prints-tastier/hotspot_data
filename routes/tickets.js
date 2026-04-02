@@ -67,7 +67,7 @@ ticketsRouter.get("/", async (ctx) => {
     // user can only get own tickets
     filter["userId"] = userId;
 
-    sortBy = `event.${sortBy}`
+    // sortBy = `event.${sortBy}`
 
     console.log("filter", filter)
 
