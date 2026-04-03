@@ -266,8 +266,10 @@ ticketsRouter.post("/", async (ctx) => {
                 }
             },
             {$unwind: "$event"},
+            {$limit: 1},
             {$project: TicketProjection}
         ])
+        newTicket = newTicket[0]
     }
     catch (e) {
         ctx.throw(500)
@@ -309,8 +311,11 @@ ticketsRouter.get("/:id", async ctx => {
                 }
             },
             {$unwind: "$event"},
+            {$limit: 1},
             {$project: TicketProjection}
         ])
+
+        ticket = ticket[0]
     } catch (e) {
         console.log(e)
         ctx.throw(404)
