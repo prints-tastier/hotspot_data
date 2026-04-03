@@ -248,8 +248,33 @@ ticketsRouter.post("/", async (ctx) => {
         }
     }
 
+    let newTicket
+    try {
+        newTicket = await Ticket.aggregate([
+            {$match: {id: ticketId}},
+            {
+                $lookup: {
+                    from: "Events",
+                    let: {ticketEventId: "$eventId"},
+                    pipeline: [
+                        {$match: {$expr: {$eq: ["$id", "$$ticketEventId"]}}},
+                        {$project: EventProjection},
+                    ],
+                    localField: "eventId",
+                    foreignField: "id",
+                    as: "event",
+                }
+            },
+            {$unwind: "$event"},
+            {$project: TicketProjection}
+        ])
+    }
+    catch (e) {
+        ctx.throw(500)
+    }
+
     ctx.state.response.status = 201
-    ctx.state.response.body = cTicket
+    ctx.state.response.body = newTicket
 })
 
 // ticket
@@ -267,7 +292,25 @@ ticketsRouter.get("/:id", async ctx => {
 
     try {
         // TODO add authorization: ticket holder can access, event host can access.
-        ticket = await Ticket.findOne({id: ticketId}, TicketProjection)
+        // ticket = await Ticket.findOne({id: ticketId}, TicketProjection)
+        ticket = await Ticket.aggregate([
+            {$match: {id: ticketId}},
+            {
+                $lookup: {
+                    from: "Events",
+                    let: {ticketEventId: "$eventId"},
+                    pipeline: [
+                        {$match: {$expr: {$eq: ["$id", "$$ticketEventId"]}}},
+                        {$project: EventProjection},
+                    ],
+                    localField: "eventId",
+                    foreignField: "id",
+                    as: "event",
+                }
+            },
+            {$unwind: "$event"},
+            {$project: TicketProjection}
+        ])
     } catch (e) {
         console.log(e)
         ctx.throw(404)
@@ -291,7 +334,8 @@ ticketsRouter.delete("/:id", async ctx => {
     }
 
     if (!ticket) {
-        ctx.throw(404)
+        ctx.status = 204
+        return
     }
 
     try {
@@ -301,6 +345,5 @@ ticketsRouter.delete("/:id", async ctx => {
         ctx.throw(500)
     }
 
-    ctx.state.response.status = 200
-    ctx.state.response.body = ticket
+    ctx.state.response.status = 204
 })

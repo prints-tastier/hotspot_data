@@ -423,8 +423,7 @@ eventRouter.delete("/:id", async ctx => {
     }
 
     if (!event) {
-        ctx.state.response.status = 204
-        return
+        ctx.throw(404, "Event not found.")
     }
     console.log("event host userId", event, event.host, userId)
 
@@ -450,8 +449,7 @@ eventRouter.delete("/:id", async ctx => {
 
     event.host = host
 
-    ctx.state.response.status = 200
-    ctx.state.response.body = event
+    ctx.state.response.status = 204
 })
 
 // event images
@@ -633,8 +631,7 @@ eventRouter.delete("/:id/images", async ctx => {
         ctx.throw(500)
     }
 
-    ctx.state.response.status = 200;
-    ctx.state.response.body = response
+    ctx.state.response.status = 204;
 })
 
 // event image
@@ -714,8 +711,7 @@ eventRouter.delete("/:eventId/images/:imageId", async ctx => {
         ctx.throw(500)
     }
 
-    ctx.state.response.status = 200;
-    ctx.state.response.body = response
+    ctx.state.response.status = 204;
 })
 
 function getRequestValidationErrors(validationError) {
