@@ -270,6 +270,17 @@ ticketsRouter.post("/", async (ctx) => {
             {$project: TicketProjection}
         ])
         newTicket = newTicket[0]
+
+        let event = newTicket.event
+
+        let hostId = event.host
+
+        try {
+            let hostUser = await User.findOne({id: hostId}, EventHostUserProjection);
+            event.host = hostUser
+        } catch (e) {
+            console.error(e);
+        }
     }
     catch (e) {
         ctx.throw(500)
@@ -316,6 +327,17 @@ ticketsRouter.get("/:id", async ctx => {
         ])
 
         ticket = ticket[0]
+
+        let event = ticket.event
+
+        let hostId = event.host
+
+        try {
+            let hostUser = await User.findOne({id: hostId}, EventHostUserProjection);
+            event.host = hostUser
+        } catch (e) {
+            console.error(e);
+        }
     } catch (e) {
         console.log(e)
         ctx.throw(404)
