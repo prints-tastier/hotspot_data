@@ -244,7 +244,7 @@ ticketsRouter.post("/", async (ctx) => {
                     message: "The user already has a ticket for this event."
                 }]
             }
-            ctx.throw(400)
+            ctx.throw(409)
         }
     }
 
