@@ -587,8 +587,6 @@ eventRouter.delete("/:id/images", async ctx => {
 
     // checkpoint: event exists and user can edit
 
-    // event = event.toObject()
-
     let imageIds = event.pictures.map(it => `${it.id}.${mime.getExtension(mime.getType(it.url))}`)
     console.log(`IMAGE IDS: ${imageIds}`)
 
