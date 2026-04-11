@@ -146,12 +146,27 @@ selfRouter.put("/", async ctx => {
 
     try {
         updatedUser = await User.findOne({id: userId}, UserPrivate)
-    }
-    catch (e) {
+    } catch (e) {
         console.log(e)
         ctx.throw(500)
     }
 
     ctx.state.response.status = 200
     ctx.state.response.body = updatedUser
+})
+
+selfRouter.delete("/", async ctx => {
+    let userId = ctx.state.userId
+
+    console.log(`Deleting user userId=${userId}`)
+
+    try {
+        await User.deleteOne({id: userId})
+    }
+    catch (e) {
+        console.log(e)
+        ctx.throw(500)
+    }
+
+    ctx.state.response.status = 204
 })
